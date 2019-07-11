@@ -7,6 +7,12 @@
 #include "pb_encode.h"
 #include "pb_common.h"
 
+#ifdef OS_IO_SEPROXYHAL
+#include "os.h"
+#else
+#define PIC(x) x
+#endif
+
 /* Use the GCC warn_unused_result attribute to check that all return values
  * are propagated correctly. On other compilers and gcc before 3.4.0 just
  * ignore the annotation.
@@ -309,7 +315,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
     bool implicit_has;
     const void *pSize = &implicit_has;
     
-    func = PB_ENCODERS[PB_LTYPE(field->type)];
+    func = PB_ENCODERS[PB_LTYPE(field->type)];    
     
     if (field->size_offset)
     {
@@ -344,7 +350,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
                 PB_RETURN_ERROR(stream, "missing required field");
             if (!pb_encode_tag_for_field(stream, field))
                 return false;
-            if (!func(stream, field, pData))
+            if (!((pb_encoder_t)PIC(func))(stream, field, pData))
                 return false;
             break;
         
@@ -353,8 +359,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
             {
                 if (!pb_encode_tag_for_field(stream, field))
                     return false;
-            
-                if (!func(stream, field, pData))
+                if (!((pb_encoder_t)PIC(func))(stream, field, pData))
                     return false;
             }
             break;
@@ -370,7 +375,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
                 if (!pb_encode_tag_for_field(stream, field))
                     return false;
 
-                if (!func(stream, field, pData))
+                if (!((pb_encoder_t)PIC(func))(stream, field, pData))
                     return false;
             }
             break;
@@ -378,7 +383,6 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
         default:
             PB_RETURN_ERROR(stream, "invalid field type");
     }
-    
     return true;
 }
 
@@ -486,8 +490,8 @@ bool checkreturn pb_encode(pb_ostream_t *stream, const pb_field_t fields[], cons
 {
     pb_field_iter_t iter;
     if (!pb_field_iter_begin(&iter, fields, pb_const_cast(src_struct)))
-        return true; /* Empty message type */
-    
+         return true; /* Empty message type */
+       
     do {
         if (PB_LTYPE(iter.pos->type) == PB_LTYPE_EXTENSION)
         {
@@ -545,6 +549,7 @@ bool checkreturn pb_encode_varint(pb_ostream_t *stream, pb_uint64_t value)
         pb_byte_t v = (pb_byte_t)value;
         return pb_write(stream, &v, 1);
     }
+
     
     while (value)
     {
@@ -553,7 +558,6 @@ bool checkreturn pb_encode_varint(pb_ostream_t *stream, pb_uint64_t value)
         i++;
     }
     buffer[i-1] &= 0x7F; /* Unset top bit on last byte */
-    
     return pb_write(stream, buffer, i);
 }
 
@@ -631,7 +635,6 @@ bool checkreturn pb_encode_tag_for_field(pb_ostream_t *stream, const pb_field_t 
         default:
             PB_RETURN_ERROR(stream, "invalid field type");
     }
-    
     return pb_encode_tag(stream, wiretype, field->tag);
 }
 
@@ -709,7 +712,7 @@ static bool checkreturn pb_enc_varint(pb_ostream_t *stream, const pb_field_t *fi
         value = *(const pb_int64_t*)src;
     else
         PB_RETURN_ERROR(stream, "invalid data_size");
-    
+        
     return pb_encode_varint(stream, (pb_uint64_t)value);
 }
 
