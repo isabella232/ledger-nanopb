@@ -7,6 +7,12 @@
 #include "pb_encode.h"
 #include "pb_common.h"
 
+#ifdef OS_IO_SEPROXYHAL
+#include "os.h"
+#else
+#define PIC(x) x
+#endif
+
 /* Use the GCC warn_unused_result attribute to check that all return values
  * are propagated correctly. On other compilers and gcc before 3.4.0 just
  * ignore the annotation.
@@ -349,7 +355,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
                 PB_RETURN_ERROR(stream, "missing required field");
             if (!pb_encode_tag_for_field(stream, field))
                 return false;
-            if (!func(stream, field, pData))
+            if (!((pb_encoder_t)PIC(func))(stream, field, pData))
                 return false;
             break;
         
@@ -359,7 +365,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
                 if (!pb_encode_tag_for_field(stream, field))
                     return false;
             
-                if (!func(stream, field, pData))
+                if (!((pb_encoder_t)PIC(func))(stream, field, pData))
                     return false;
             }
             break;
@@ -382,7 +388,7 @@ static bool checkreturn encode_basic_field(pb_ostream_t *stream,
                 if (!pb_encode_tag_for_field(stream, field))
                     return false;
 
-                if (!func(stream, field, pData))
+                if (!((pb_encoder_t)PIC(func))(stream, field, pData))
                     return false;
             }
             break;
