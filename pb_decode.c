@@ -19,6 +19,10 @@
 
 #include "os.h"
 
+#undef  DBGLOG_LEVEL
+#define DBGLOG_LEVEL 1
+#include "dbglog/dbglog.h"
+
 /**************************************
  * Declarations internal to this file *
  **************************************/
@@ -163,9 +167,9 @@ void __cyg_profile_func_enter( void *func, void *callsite )
 {
     const char* fname = addr_to_fname(func);
     for(int i = 0; i < G_depth; i++){
-        PRINTF(" ");
+        DBGLOG_INFO(" ");
     }
-    PRINTF("-> %p '%s' [from %p], STACK %p, left: %d\n", func, fname, callsite, &fname, ((void*)&fname) - &_ebss); //, last_stack_left - (((void*)&fname) - &_ebss));
+    DBGLOG_INFO("-> %p '%s' [from %p], STACK %p, left: %d\n", func, fname, callsite, &fname, ((void*)&fname) - &_ebss); //, last_stack_left - (((void*)&fname) - &_ebss));
     last_stack_left = ((void*)&fname) - &_ebss;
     G_depth++;
 }
@@ -176,9 +180,9 @@ void __cyg_profile_func_exit( void *func, void *callsite )
     // last_stack_left = ((void*)&fname) - &_ebss;
     G_depth--;
     for(int i = 0; i < G_depth; i++){
-        PRINTF(" ");
+        DBGLOG_INFO(" ");
     }
-    PRINTF("<- %p '%s' [from %p], left: %d\n", func, fname, callsite, ((void*)&fname) - &_ebss);
+    DBGLOG_INFO("<- %p '%s' [from %p], left: %d\n", func, fname, callsite, ((void*)&fname) - &_ebss);
     // last_stack_left = ((void*)&fname) - &_ebss;
 }
 
