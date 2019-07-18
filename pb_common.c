@@ -6,6 +6,9 @@
 #include "pb_common.h"
 #include "os.h"
 
+#undef  DBGLOG_LEVEL
+#define DBGLOG_LEVEL 1
+#include "dbglog/dbglog.h"
 
 bool pb_field_iter_begin(pb_field_iter_t *iter, const pb_field_t *fields, void *dest_struct)
 {
@@ -102,7 +105,7 @@ extern void _ebss;
 bool check_stack_overflow(uint16_t min_bss_stack_gap){
     uint32_t stack_top = 0;
 
-    //PRINTF("+++++++Stack remaining: CUR STACK ADDR: %p, EBSS: %p, diff: %d\n", &stack_top, &_ebss, ((uintptr_t)&stack_top) - ((uintptr_t)&_ebss));
+    DBGLOG_TRACE("+++++++Stack remaining: CUR STACK ADDR: %p, EBSS: %p, diff: %d\n", &stack_top, &_ebss, ((uintptr_t)&stack_top) - ((uintptr_t)&_ebss));
     if(((uintptr_t)&stack_top) < (((uintptr_t)&_ebss) + min_bss_stack_gap)){
         return true;
     }
