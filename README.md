@@ -10,8 +10,6 @@ restricted system.
 
 * **Homepage:** https://jpa.kapsi.fi/nanopb/
 * **Documentation:** https://jpa.kapsi.fi/nanopb/docs/
-* **Downloads:** https://jpa.kapsi.fi/nanopb/download/
-* **Forum:** https://groups.google.com/forum/#!forum/nanopb
 
 
 
