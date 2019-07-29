@@ -605,6 +605,10 @@ static bool checkreturn decode_pointer_field(pb_istream_t *stream, pb_wire_type_
                 void *pItem;
                 pb_istream_t substream;
                 
+#ifdef PB_ENABLE_ADV_SIZE_CHECK
+                if (iter->pos->array_size > 0 && allocated_size > iter->pos->array_size)
+                    PB_RETURN_ERROR(stream, "allowed repeated items limit exceeded");
+#endif
                 if (!pb_make_string_substream(stream, &substream))
                     return false;
                 
@@ -662,6 +666,10 @@ static bool checkreturn decode_pointer_field(pb_istream_t *stream, pb_wire_type_
                 if (*size == PB_SIZE_MAX)
                     PB_RETURN_ERROR(stream, "too many array entries");
                 
+#ifdef PB_ENABLE_ADV_SIZE_CHECK
+                if (iter->pos->max_count_limit > 0 && (*size + 1) > iter->pos->max_count_limit)
+                    PB_RETURN_ERROR(stream, "allowed repated items limit exceeded");
+#endif
                 if (!allocate_field(stream, iter->pData, iter->pos->data_size, (size_t)(*size + 1)))
                     return false;
             
@@ -1462,6 +1470,13 @@ static bool checkreturn pb_dec_bytes(pb_istream_t *stream, const pb_field_t *fie
         if (stream->bytes_left < size)
             PB_RETURN_ERROR(stream, "end-of-stream");
 
+#ifdef PB_ENABLE_ADV_SIZE_CHECK
+        /* field.max_size_limit == 0 disables pre-mem alloc check */
+        if (field->max_size_limit > 0 && alloc_size > field->max_size_limit){
+            PB_LOG("alloc_size (%zu) > field->max_size_limit (%zu)\n", alloc_size, field->max_size_limit);
+            PB_RETURN_ERROR(stream, "mem alloc limit exceeded");
+        }
+#endif
         if (!allocate_field(stream, dest, alloc_size, 1))
             return false;
         bdest = *(pb_bytes_array_t**)dest;
@@ -1497,9 +1512,28 @@ static bool checkreturn pb_dec_string(pb_istream_t *stream, const pb_field_t *fi
 #ifndef PB_ENABLE_MALLOC
         PB_RETURN_ERROR(stream, "no malloc support");
 #else
+
+#ifndef PB_ENABLE_ADV_SIZE_CHECK
         if (stream->bytes_left < size)
             PB_RETURN_ERROR(stream, "end-of-stream");
+#else // PB_ENABLE_ADV_SIZE_CHECK
+        /* field.max_size_limit == 0 disables pre- mem alloc check */
+        if (field->max_size_limit > 0 && alloc_size > field->max_size_limit){
+#ifdef PB_ENABLE_LOG
+            PB_LOG("alloc_size(%zu) > field->max_size_limit(%zu)\n", alloc_size, field->max_size_limit);
 
+            if (!allocate_field(stream, dest, field->max_size_limit, 1)){
+                return false;
+            }
+
+            dest = *(void**)dest;
+            status = pb_read(stream, (pb_byte_t*)dest, field->max_size_limit);
+            *((pb_byte_t*)dest + field->max_size_limit) = 0;
+            PB_LOG("faulty string prefix: '%s'\n", (char*)dest);
+#endif // PB_ENABLE_LOG
+            PB_RETURN_ERROR(stream, "allowed string length limit exceeded");
+        }
+#endif // PB_ENABLE_ADV_SIZE_CHECK
         if (!allocate_field(stream, dest, alloc_size, 1))
             return false;
         dest = *(void**)dest;
