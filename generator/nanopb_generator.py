@@ -606,6 +606,27 @@ class Field:
         result += '%s, ' % self.name
         result += '%s, ' % (prev_field_name or self.name)
 
+        # Add max_size & max_count fields for advanced size checks, if requested by user
+        if Globals.adv_size_checks:
+            if (self.allocation == 'POINTER' and (self.pbtype == 'STRING' or self.pbtype == 'BYTES')) or \
+            self.rules == 'REPEATED':
+                pattern = '%d, %d, '
+                # if bytes and max_size is set, we need to use a specific macro to compute the real max size
+                if self.pbtype == "BYTES" and self.max_size is not None:
+                    pattern = 'PB_BYTES_ARRAY_T_ALLOCSIZE(%d), %d, '
+                # pattern = '%d, %d, ' if self.pbtype != "BYTES" else 'PB_BYTES_ARRAY_T_ALLOCSIZE(%d), %d, '
+                result += pattern % (self.max_size if self.max_size is not None else 0,
+                                     self.max_count if self.max_count is not None else 0)
+            else:
+                result += '0, 0, '
+                # Prevent user of ignored options
+                if self.allocation == 'POINTER':
+                    if self.max_count is not None:
+                        sys.stderr.write("Warning: max_count option ignored on non-repeated field %s.\n" % self.name)
+                    if self.max_size is not None and self.pbtype != 'FIXED_LENGTH_BYTES':
+                        sys.stderr.write("Warning: max_size option ignored on generic field %s, self.allocation %s, self.pbtype %s, self.rules %s.\n" % (self.name, self.allocation, self.pbtype, self.rules))
+
+
         if self.pbtype == 'MESSAGE':
             result += '&%s_fields)' % self.submsgname
         elif self.default is None:
@@ -1259,6 +1280,7 @@ class ProtoFile:
             symbol = make_identifier(headername)
         yield '#ifndef PB_%s_INCLUDED\n' % symbol
         yield '#define PB_%s_INCLUDED\n' % symbol
+
         try:
             yield options.libformat % ('pb.h')
         except TypeError:
@@ -1526,6 +1548,7 @@ def read_options_file(infile):
 class Globals:
     '''Ugly global variables, should find a good way to pass these.'''
     verbose_options = False
+    adv_size_checks = False
     separate_options = []
     matched_namemasks = set()
 
@@ -1615,6 +1638,8 @@ optparser.add_option("-v", "--verbose", dest="verbose", action="store_true", def
     help="Print more information.")
 optparser.add_option("-s", dest="settings", metavar="OPTION:VALUE", action="append", default=[],
     help="Set generator option (max_size, max_count etc.).")
+optparser.add_option("-c", "--adv-size-checks", dest="adv_size_checks", action="store_true", default=False,
+    help="Enable additional decode-time limit checks on pointer-type byte buffers, strings and repeated fields.")
 
 def parse_file(filename, fdesc, options):
     '''Parse a single file. Returns a ProtoFile instance.'''
@@ -1735,6 +1760,12 @@ def main_cli():
         sys.stderr.write('Google Python protobuf library imported from %s, version %s\n'
                          % (google.protobuf.__file__, google.protobuf.__version__))
 
+    if options.adv_size_checks:
+        sys.stderr.write("\nATTENTION: Advanced size checks option is activated.\nYou will "
+                            "need to pass the -DPB_ENABLE_MALLOC and -DPB_ENABLE_ADV_SIZE_CHECK "
+                            "options to the compiler to properly build with the generated files.\n\n")
+
+    Globals.adv_size_checks = options.adv_size_checks
     Globals.verbose_options = options.verbose
     for filename in filenames:
         results = process_file(filename, None, options)
@@ -1794,6 +1825,9 @@ def main_plugin():
         optparser.print_help(sys.stderr)
         sys.exit(1)
 
+    # According to the Protobuf doc (Command Line Interface), the additional plugin options
+    # shall be placed before the output dir name and shall be separated with colons (i.e.
+    # --nanopb_out=--adv-size-check:output_dir)
     options, dummy = optparser.parse_args(args)
 
     if options.version:
@@ -1801,11 +1835,17 @@ def main_plugin():
         sys.exit(0)
 
     Globals.verbose_options = options.verbose
+    Globals.adv_size_checks = options.adv_size_checks
 
     if options.verbose:
         sys.stderr.write("Nanopb version %s\n" % nanopb_version)
         sys.stderr.write('Google Python protobuf library imported from %s, version %s\n'
                          % (google.protobuf.__file__, google.protobuf.__version__))
+
+    if options.adv_size_checks:
+        sys.stderr.write("\nATTENTION: Advanced size checks option is activated.\nYou will "
+                            "need to pass the -DPB_ENABLE_MALLOC and -DPB_ENABLE_ADV_SIZE_CHECK "
+                            "options to the compiler to properly build with the generated files.\n\n")
 
     response = plugin_pb2.CodeGeneratorResponse()
 
