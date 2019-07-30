@@ -605,13 +605,12 @@ static bool checkreturn decode_pointer_field(pb_istream_t *stream, pb_wire_type_
                 void *pItem;
                 pb_istream_t substream;
                 
+#ifdef PB_ENABLE_ADV_SIZE_CHECK
+                if (iter->pos->array_size > 0 && allocated_size > iter->pos->array_size)
+                    PB_RETURN_ERROR(stream, "allowed repeated items limit exceeded");
+#endif
                 if (!pb_make_string_substream(stream, &substream))
                     return false;
-
-#ifdef PB_ENABLE_ADV_SIZE_CHECK
-                if (iter->pos->max_count_limit > 0 && allocated_size > iter->pos->max_count_limit)
-                    PB_RETURN_ERROR(stream, "mem alloc limit exceeded");
-#endif
 
                 while (substream.bytes_left)
                 {
@@ -669,7 +668,7 @@ static bool checkreturn decode_pointer_field(pb_istream_t *stream, pb_wire_type_
 
 #ifdef PB_ENABLE_ADV_SIZE_CHECK
                 if (iter->pos->max_count_limit > 0 && (*size + 1) > iter->pos->max_count_limit)
-                    PB_RETURN_ERROR(stream, "mem alloc limit exceeded");
+                    PB_RETURN_ERROR(stream, "allowed repated items limit exceeded");
 #endif                
                 if (!allocate_field(stream, iter->pData, iter->pos->data_size, (size_t)(*size + 1)))
                     return false;
@@ -1212,11 +1211,17 @@ static void pb_release_single_field(const pb_field_iter_t *iter)
             if (PB_ATYPE(type) == PB_ATYPE_STATIC && iter->pSize == iter->pData) {
                 /* No _count field so use size of the array */
                 count = iter->pos->array_size;
-            } else {
+            }
+            else {
                 count = *(pb_size_t*)iter->pSize;
             }
 
-            if (PB_ATYPE(type) == PB_ATYPE_STATIC && count > iter->pos->array_size)
+#ifdef PB_ENABLE_ADV_SIZE_CHECK
+            if ((PB_ATYPE(type) == PB_ATYPE_STATIC || PB_ATYPE(type) == PB_ATYPE_POINTER)
+#else
+            if (PB_ATYPE(type) == PB_ATYPE_STATIC
+#endif
+                && count > iter->pos->array_size )
             {
                 /* Protect against corrupted _count fields */
                 count = iter->pos->array_size;
@@ -1511,14 +1516,11 @@ static bool checkreturn pb_dec_string(pb_istream_t *stream, const pb_field_t *fi
 #ifndef PB_ENABLE_MALLOC
         PB_RETURN_ERROR(stream, "no malloc support");
 #else
-        if (stream->bytes_left < size)
-            PB_RETURN_ERROR(stream, "end-of-stream");
-
-#ifdef PB_ENABLE_ADV_SIZE_CHECK
+# ifdef PB_ENABLE_ADV_SIZE_CHECK
         /* field.max_size_limit == 0 disables pre- mem alloc check */
         if (field->max_size_limit > 0 && alloc_size > field->max_size_limit)
-            PB_RETURN_ERROR(stream, "mem alloc limit exceeded"); 
-#endif
+            PB_RETURN_ERROR(stream, "allowed string length limit exceeded"); 
+# endif
         if (!allocate_field(stream, dest, alloc_size, 1))
             return false;
         dest = *(void**)dest;
