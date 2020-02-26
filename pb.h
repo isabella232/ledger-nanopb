@@ -206,7 +206,10 @@ typedef uint_least8_t pb_type_t;
 /* Data type used for storing sizes of struct fields
  * and array counts.
  */
-#if defined(PB_FIELD_32BIT)
+#if defined(PB_FIELD_64BIT)
+    typedef uint64_t pb_size_t;
+    typedef int64_t pb_ssize_t;
+#elif defined(PB_FIELD_32BIT)
     typedef uint32_t pb_size_t;
     typedef int32_t pb_ssize_t;
 #elif defined(PB_FIELD_16BIT)
