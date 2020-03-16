@@ -1190,11 +1190,11 @@ static void pb_release_single_field(const pb_field_iter_t *iter)
                 count = *(pb_size_t*)iter->pSize;
             }
 
-#ifdef PB_ENABLE_ADV_SIZE_CHECK
-            if (   (PB_ATYPE(type) == PB_ATYPE_STATIC || PB_ATYPE(type) == PB_ATYPE_POINTER)
-#else
+//#ifdef PB_ENABLE_ADV_SIZE_CHECK
+//            if (   (PB_ATYPE(type) == PB_ATYPE_STATIC || PB_ATYPE(type) == PB_ATYPE_POINTER)
+//#else
             if (   PB_ATYPE(type) == PB_ATYPE_STATIC
-#endif
+//#endif
                 && count > iter->pos->array_size )
             {
                 /* Protect against corrupted _count fields */
