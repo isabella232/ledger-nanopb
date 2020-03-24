@@ -71,12 +71,13 @@ static const pb_encoder_t PB_ENCODERS[PB_LTYPES_COUNT] = {
 
 static bool checkreturn buf_write(pb_ostream_t *stream, const pb_byte_t *buf, size_t count)
 {
-    size_t i;
+//    size_t i;
     pb_byte_t *dest = (pb_byte_t*)stream->state;
     stream->state = dest + count;
-    
-    for (i = 0; i < count; i++)
-        dest[i] = buf[i];
+
+    memcpy(dest, buf, count);
+//    for (i = 0; i < count; i++)
+//        dest[i] = buf[i];
     
     return true;
 }
@@ -676,6 +677,7 @@ bool checkreturn pb_encode_tag_for_field(pb_ostream_t *stream, const pb_field_t 
 
 bool checkreturn pb_encode_string(pb_ostream_t *stream, const pb_byte_t *buffer, size_t size)
 {
+//    PB_LOG("pb_encode_string %p (%zu)\n", buffer, size);
     if (!pb_encode_varint(stream, (pb_uint64_t)size))
         return false;
     

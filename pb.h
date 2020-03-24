@@ -392,11 +392,18 @@ struct pb_extension_s {
 /* Memory allocation functions to use. You can define pb_realloc and
  * pb_free to custom functions if you want. */
 #ifdef PB_ENABLE_MALLOC
+extern int G_height;
 #   ifndef pb_realloc
 #       define pb_realloc(ptr, size) realloc(ptr, size)
 #   endif
 #   ifndef pb_free
-#       define pb_free(ptr) free(ptr)
+#       define pb_free(ptr) {\
+            for(int i = 0; i < G_height; i++){\
+PB_LOG(" ");\
+}\
+PB_LOG("Freeing %p\n", ptr);\
+free(ptr);\
+}
 #   endif
 #endif
 

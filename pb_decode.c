@@ -61,6 +61,7 @@ static void pb_release_single_field(const pb_field_iter_t *iter);
 #define pb_uint64_t uint64_t
 #endif
 
+int G_height = 0;
 /* --- Function pointers to field decoders ---
  * Order in the array must match pb_action_t LTYPE numbering.
  */
@@ -84,14 +85,12 @@ static const pb_decoder_t PB_DECODERS[PB_LTYPES_COUNT] = {
 
 static bool checkreturn buf_read(pb_istream_t *stream, pb_byte_t *buf, size_t count)
 {
-    size_t i;
     const pb_byte_t *source = (const pb_byte_t*)stream->state;
     stream->state = (pb_byte_t*)stream->state + count;
     
     if (buf != NULL)
     {
-        for (i = 0; i < count; i++)
-            buf[i] = source[i];
+        memcpy(buf, source, count);
     }
     
     return true;
@@ -1206,6 +1205,10 @@ static void pb_release_single_field(const pb_field_iter_t *iter)
         {
             while (count--)
             {
+                for(int i = 0; i < G_height; i++){
+                    PB_LOG(" ");
+                }
+                PB_LOG("PB RELEASE %zu\n", count);
                 pb_release((const pb_field_t*)iter->pos->ptr, pItem);
                 pItem = (char*)pItem + iter->pos->data_size;
             }
@@ -1243,17 +1246,26 @@ static void pb_release_single_field(const pb_field_iter_t *iter)
 void pb_release(const pb_field_t fields[], void *dest_struct)
 {
     pb_field_iter_t iter;
-    
-    if (!dest_struct)
+    G_height++;
+    for(int i = 0; i < G_height; i++){
+        PB_LOG(" ");
+    }
+    PB_LOG("pb_release fields %p dest_struct %p\n",fields, dest_struct);
+    if (!dest_struct){
+        G_height--;
         return; /* Ignore NULL pointers, similar to free() */
+    }
 
-    if (!pb_field_iter_begin(&iter, fields, dest_struct))
+    if (!pb_field_iter_begin(&iter, fields, dest_struct)){
+        G_height--;
         return; /* Empty message type */
+    }
     
     do
     {
         pb_release_single_field(&iter);
     } while (pb_field_iter_next(&iter));
+    G_height--;
 }
 #endif  /* PB_ENABLE_MALLOC */
 
@@ -1502,6 +1514,7 @@ static bool checkreturn pb_dec_string(pb_istream_t *stream, const pb_field_t *fi
     
     status = pb_read(stream, (pb_byte_t*)dest, size);
     *((pb_byte_t*)dest + size) = 0;
+    PB_LOG("pb_dec_string: '%s' %p\n", (char*)dest, dest);
     return status;
 }
 
