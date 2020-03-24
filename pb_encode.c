@@ -282,7 +282,11 @@ static bool pb_check_proto3_default_value(const pb_field_t *field, const void *p
             return true;
         }
     }
-    
+
+    /* Compares pointers to NULL in case of FT_POINTER */
+    if (PB_ATYPE(type) == PB_ATYPE_POINTER && PB_LTYPE(type) > PB_LTYPE_LAST_PACKABLE)
+        return !*(const void**)pData;
+
 	{
 	    /* Catch-all branch that does byte-per-byte comparison for zero value.
 	     *
@@ -688,7 +692,7 @@ bool checkreturn pb_encode_submessage(pb_ostream_t *stream, const pb_field_t fie
     pb_ostream_t substream = PB_OSTREAM_SIZING;
     size_t size;
     bool status;
-    
+
     if (!pb_encode(&substream, fields, src_struct))
     {
 #ifndef PB_NO_ERRMSG
