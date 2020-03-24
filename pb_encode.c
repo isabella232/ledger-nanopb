@@ -313,7 +313,7 @@ static bool pb_check_proto3_default_value(const pb_field_t *field, const void *p
     {
         return !*(const void**)((uintptr_t)pData);
     }
-    
+
 	{
 	    /* Catch-all branch that does byte-per-byte comparison for zero value.
 	     *
@@ -720,7 +720,7 @@ bool checkreturn pb_encode_submessage(pb_ostream_t *stream, const pb_field_t fie
     pb_ostream_t substream = PB_OSTREAM_SIZING;
     size_t size;
     bool status;
-    
+
     if (!pb_encode(&substream, fields, src_struct))
     {
 #ifndef PB_NO_ERRMSG
