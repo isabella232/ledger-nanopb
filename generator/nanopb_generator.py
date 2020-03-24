@@ -1459,7 +1459,8 @@ class ProtoFile:
                 yield '#endif\n\n'
 
             if worst < 65536:
-                yield '#if !defined(PB_FIELD_16BIT) && !defined(PB_FIELD_32BIT)\n'
+                yield '#if !defined(PB_FIELD_16BIT) && !defined(PB_FIELD_32BIT) && !defined(' \
+                      'PB_FIELD_64BIT)\n'
                 if worst > 255:
                     yield '#error Field descriptor for %s is too large. Define PB_FIELD_16BIT to fix this.\n' % worst_field
                 else:
