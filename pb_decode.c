@@ -1431,6 +1431,9 @@ static bool checkreturn pb_dec_bytes(pb_istream_t *stream, const pb_field_t *fie
 #ifndef PB_ENABLE_MALLOC
         PB_RETURN_ERROR(stream, "no malloc support");
 #else
+        if (stream->bytes_left < size)
+            PB_RETURN_ERROR(stream, "end-of-stream");
+
 #ifdef PB_ENABLE_ADV_SIZE_CHECK
         /* field.max_size_limit == 0 disables pre-mem alloc check */
         if (field->max_size_limit > 0 && alloc_size > field->max_size_limit){
@@ -1473,6 +1476,9 @@ static bool checkreturn pb_dec_string(pb_istream_t *stream, const pb_field_t *fi
 #ifndef PB_ENABLE_MALLOC
         PB_RETURN_ERROR(stream, "no malloc support");
 #else
+        if (stream->bytes_left < size)
+            PB_RETURN_ERROR(stream, "end-of-stream");
+
 # ifdef PB_ENABLE_ADV_SIZE_CHECK
         /* field.max_size_limit == 0 disables pre- mem alloc check */
         if (field->max_size_limit > 0 && alloc_size > field->max_size_limit){
