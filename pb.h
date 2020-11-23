@@ -529,7 +529,6 @@ struct pb_extension_s {
         {tag, PB_ATYPE_POINTER | PB_HTYPE_REPEATED | ltype, \
         fd, pb_delta(st, m ## _count, m), \
         pb_membersize(st, m[0]), maxcntl, ptr, maxsizl}
-//        pb_membersize(st, m[0]), 0, ptr, maxsizl, maxcntl}
 #endif  /* PB_ENABLE_ADV_SIZE_CHECK */
 
 /* Callbacks are much like required fields except with special datatype. */
@@ -656,7 +655,6 @@ struct pb_extension_s {
         fd, pb_delta(st, which_ ## u, u.m), \
         pb_membersize(st, u.m[0]), 0, ptr}
 #else
-/*    #define PB_ONEOF_POINTER(u, tag, st, m, fd, ltype, maxsizl, maxcntl, ptr) \*/
     #define PB_ONEOF_POINTER(u, tag, st, m, fd, ltype, maxsizl, ptr) \
         {tag, PB_ATYPE_POINTER | PB_HTYPE_ONEOF | ltype, \
         fd, pb_delta(st, which_ ## u, u.m), \
@@ -686,7 +684,6 @@ struct pb_extension_s {
         fd, pb_delta(st, which_ ## u, m), \
         pb_membersize(st, m[0]), 0, ptr}
 #else
-/*    #define PB_ANONYMOUS_ONEOF_POINTER(u, tag, st, m, fd, ltype, maxsizl, maxcntl, ptr) \*/
     #define PB_ANONYMOUS_ONEOF_POINTER(u, tag, st, m, fd, ltype, maxsizl, ptr) \
         {tag, PB_ATYPE_POINTER | PB_HTYPE_ONEOF | ltype, \
         fd, pb_delta(st, which_ ## u, m), \
@@ -699,7 +696,6 @@ struct pb_extension_s {
         PB_DATAOFFSET_ ## placement(message, field, prevfield), \
         PB_LTYPE_MAP_ ## type, ptr)
 #else
-/*    #define PB_ANONYMOUS_ONEOF_POINTER(u, tag, st, m, fd, ltype, maxsizl, maxcntl, ptr) \*/
 #define PB_ANONYMOUS_ONEOF_FIELD(union_name, tag, type, rules, allocation, placement, message, field, prevfield, maxsizl, maxcntl, ptr) \
         PB_ANONYMOUS_ONEOF_ ## allocation(union_name, tag, message, field, \
         PB_DATAOFFSET_ ## placement(message, field, prevfield), \
