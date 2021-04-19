@@ -1,4 +1,4 @@
-This is a fork of Nanopb version 0.3.9.3 from https://github.com/nanopb/nanopb updated with fixes to make it workable on Ledger Nano S.
+This is a fork of Nanopb version 0.3.9.8 from https://github.com/nanopb/nanopb updated with fixes to make it workable on Ledger Nano S.
 Thanks to https://github.com/yatendra for doing most of the work.
 
 Nanopb - Protocol Buffers for Embedded Systems

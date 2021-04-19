@@ -154,8 +154,8 @@ const addr_to_fname_t addr_to_fnames[] = {
 
 const char* addr_to_fname(void* func) __attribute__((no_instrument_function));
 const char* addr_to_fname(void* func){
-    for(int i = 0; i < sizeof(addr_to_fnames)/sizeof(*addr_to_fnames); i++){
-        if(PIC(addr_to_fnames[i].addr) == func){
+    for(size_t i = 0; i < sizeof(addr_to_fnames)/sizeof(*addr_to_fnames); i++){
+        if((const void* const)PIC(addr_to_fnames[i].addr) == func){
             return (const char*)(PIC(addr_to_fnames[i].name));
         }
     }
@@ -166,23 +166,17 @@ void __cyg_profile_func_enter(void *this_fn, void *call_site) __attribute__((no_
 void __cyg_profile_func_enter( void *func, void *callsite )
 {
     const char* fname = addr_to_fname(func);
-    for(int i = 0; i < G_depth; i++){
-        DBGLOG_INFO(" ");
-    }
-    DBGLOG_INFO("-> %p '%s' [from %p], STACK %p, left: %d\n", func, fname, callsite, &fname, ((void*)&fname) - &_ebss); //, last_stack_left - (((void*)&fname) - &_ebss));
+    DBGLOG_INFO("->%.*s %p '%s' [from %p], STACK %p, left: %d\n", G_depth++, " ", func, fname, callsite, &fname, ((void*)&fname) - &_ebss);
     last_stack_left = ((void*)&fname) - &_ebss;
-    G_depth++;
 }
 void __cyg_profile_func_exit(void *this_fn, void *call_site) __attribute__((no_instrument_function));
 void __cyg_profile_func_exit( void *func, void *callsite )
 {
+#if defined(HAVE_PRINTF) && DBGLOG_LEVEL >= 1
     const char* fname = addr_to_fname(func);
+#endif
     // last_stack_left = ((void*)&fname) - &_ebss;
-    G_depth--;
-    for(int i = 0; i < G_depth; i++){
-        DBGLOG_INFO(" ");
-    }
-    DBGLOG_INFO("<- %p '%s' [from %p], left: %d\n", func, fname, callsite, ((void*)&fname) - &_ebss);
+    DBGLOG_INFO("<-%.*s %p '%s' [from %p], left: %d\n", --G_depth, " ", func, fname, callsite, ((void*)&fname) - &_ebss);
     // last_stack_left = ((void*)&fname) - &_ebss;
 }
 
@@ -668,7 +662,7 @@ static bool checkreturn decode_pointer_field(pb_istream_t *stream, pb_wire_type_
     pb_decoder_t func;
     
     type = ((const pb_field_t *)PIC(iter->pos))->type;
-    func = PIC(PB_DECODERS[PB_LTYPE(type)]);
+    func = (pb_decoder_t)PIC(PB_DECODERS[PB_LTYPE(type)]);
     
     switch (PB_HTYPE(type))
     {
