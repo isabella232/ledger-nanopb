@@ -152,7 +152,7 @@ const addr_to_fname_t addr_to_fnames[] = {
 
 const char* addr_to_fname(void* func) __attribute__((no_instrument_function));
 const char* addr_to_fname(void* func){
-    for(int i = 0; i < sizeof(addr_to_fnames)/sizeof(*addr_to_fnames); i++){
+    for(size_t i = 0; i < sizeof(addr_to_fnames) / sizeof(*addr_to_fnames); i++){
         if(PIC(addr_to_fnames[i].addr) == func){
             return (const char*)(PIC(addr_to_fnames[i].name));
         }
@@ -174,7 +174,7 @@ void __cyg_profile_func_enter( void *func, void *callsite )
 void __cyg_profile_func_exit(void *this_fn, void *call_site) __attribute__((no_instrument_function));
 void __cyg_profile_func_exit( void *func, void *callsite )
 {
-    const char* fname = addr_to_fname(func);
+    // const char* fname = addr_to_fname(func);
     // last_stack_left = ((void*)&fname) - &_ebss;
     G_depth--;
     for(int i = 0; i < G_depth; i++){
